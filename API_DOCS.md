@@ -8,7 +8,7 @@ Base URL: `http://localhost:3000/api`
 
 ### Register
 - **Endpoint:** `POST /auth/register`
-- **Description:** Register a new user
+- **Description:** Register a new user and create a default account
 - **Auth Required:** No
 - **Headers:** `Content-Type: application/json`
 - **Body:**
@@ -16,17 +16,30 @@ Base URL: `http://localhost:3000/api`
   {
     "name": "Test User",
     "email": "test@example.com",
-    "password": "password123"
+    "password": "password123",
+    "account_name": "My Main Account"
   }
   ```
 - **Sample Response:**
   ```json
   {
-    "id": "...",
-    "name": "Test User",
-    "email": "test@example.com",
-    "createdAt": "...",
-    "updatedAt": "..."
+    "user": {
+      "id": "...",
+      "name": "Test User",
+      "email": "test@example.com",
+      "createdAt": "...",
+      "updatedAt": "..."
+    },
+    "access_token": "<JWT>",
+    "token_type": "bearer",
+    "account": {
+      "id": "...",
+      "user_id": "...",
+      "name": "My Main Account",
+      "balance": 0.0,
+      "created_at": "...",
+      "updated_at": "..."
+    }
   }
   ```
 
@@ -223,6 +236,34 @@ Base URL: `http://localhost:3000/api`
 
 ---
 
+### Set Default Account
+- **Endpoint:** `PATCH /accounts/{account_id}/set-default`
+- **Description:** Set the specified account as the default for the current user. Unsets the default flag for all other accounts of the user.
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Request:**
+  ```http
+  PATCH /accounts/123e4567-e89b-12d3-a456-426614174000/set-default
+  Authorization: Bearer <access_token>
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "message": "Default account updated",
+    "account": {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "user_id": "...",
+      "name": "My Main Account",
+      "balance": 0.0,
+      "default": true,
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  }
+  ```
+
+---
+
 ## Transactions
 
 ### List Transactions
@@ -341,14 +382,16 @@ Base URL: `http://localhost:3000/api`
 
 ### Get Transaction Totals
 - **Endpoint:** `GET /transactions/totals`
-- **Description:** Get total sales and expenses
+- **Description:** Get total sales, expenses, and balance for a specific account
 - **Auth Required:** Yes
 - **Headers:** `Authorization: Bearer <access_token>`
+- **Query Params:** `account_id` (required)
 - **Sample Response:**
   ```json
   {
     "total_sales": 1000.0,
-    "total_expenses": 500.0
+    "total_expenses": 500.0,
+    "balance": 2000.0
   }
   ```
 

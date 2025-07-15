@@ -85,4 +85,18 @@ export const getBalance = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}; 
+};
+
+export const setDefaultAccount = async (req, res, next) => {
+    try {
+        const accountId = req.params.id;
+        const account = await Account.findOne({ where: { id: accountId, user_id: req.user.id } });
+        if (!account) return res.status(404).json({ message: 'Account not found' });
+        await Account.update({ default: false }, { where: { user_id: req.user.id } });
+        account.default = true;
+        await account.save();
+        res.json({ message: 'Default account updated', account });
+    } catch (err) {
+        next(err);
+    }
+};

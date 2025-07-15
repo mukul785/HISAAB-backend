@@ -90,13 +90,16 @@ export const deleteTransaction = async (req, res, next) => {
 
 export const getTransactionTotals = async (req, res, next) => {
     try {
-        const transactions = await Transaction.findAll({ where: { user_id: req.user.id } });
+        const accId=req.account.id;
+        const transactions = await Transaction.findAll({ where: { account_id: accId } });
         let total_sales = 0, total_expenses = 0;
         for (const t of transactions) {
             if (t.transaction_type === 'sale') total_sales += t.amount;
             else if (t.transaction_type === 'expense') total_expenses += t.amount;
         }
-        res.json({ total_sales, total_expenses });
+        const account = await Account.findOne({ where: { id: accId } });
+        const balance = account ? account.balance : 0;
+        res.json({ total_sales, total_expenses, balance });
     } catch (err) {
         next(err);
     }

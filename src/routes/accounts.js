@@ -7,7 +7,8 @@ import {
   deleteAccount,
   getAccountTransactions,
   getBalance,
-  createAccount
+  createAccount,
+  setDefaultAccount
 } from '../controllers/accountsController.js';
 
 const router = express.Router();
@@ -21,5 +22,6 @@ router.get('/:id', getAccount);
 router.put('/:id', updateAccount);
 router.delete('/:id', deleteAccount);
 router.get('/:id/transactions', getAccountTransactions);
+router.patch('/:id/set-default', setDefaultAccount);
 
 export default router;

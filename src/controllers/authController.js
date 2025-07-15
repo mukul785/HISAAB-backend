@@ -2,12 +2,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
+import Account from '../models/Account.js';
 
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    const { name, email, password, account_name } = req.body;
+    if (!name || !email || !password || !account_name) {
+      return res.status(400).json({ message: 'Name, email, password, and account_name are required' });
     }
     const existing = await User.findOne({ where: { email } });
     if (existing) {
@@ -15,9 +16,25 @@ export const register = async (req, res, next) => {
     }
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashed });
+    // Create account for user and set as default
+    const account = await Account.create({
+      name: account_name,
+      user_id: user.id,
+      balance: 0.0,
+      default: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    // Generate JWT token
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
     const userObj = user.toJSON();
     delete userObj.password;
-    res.status(201).json(userObj);
+    res.status(201).json({
+      user: userObj,
+      access_token: token,
+      token_type: 'bearer',
+      account,
+    });
   } catch (err) {
     next(err);
   }
@@ -37,8 +54,11 @@ export const login = async (req, res, next) => {
     if (!valid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    // Fetch all accounts for the user
+    const accounts = await Account.findAll({ where: { user_id: user.id } });
+    const account_ids = accounts.map(acc => acc.id);
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    res.json({ access_token: token, token_type: 'bearer' });
+    res.json({ access_token: token, token_type: 'bearer', account_ids });
   } catch (err) {
     next(err);
   }

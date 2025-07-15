@@ -21,6 +21,11 @@ const Account = sequelize.define('Account', {
     allowNull: false,
     defaultValue: 0.0,
   },
+  default: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   created_at: {
     type: DataTypes.DATE,
     allowNull: false,
