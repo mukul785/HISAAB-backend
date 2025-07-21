@@ -55,7 +55,7 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     // Fetch all accounts for the user
-    const accounts = await Account.findAll({ where: { user_id: user.id } });
+    const accounts = await Account.findAll({ where: { user_id: user.id }, order: [['default', 'DESC']] });
     const account_ids = accounts.map(acc => acc.id);
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.json({ access_token: token, token_type: 'bearer', account_ids });
