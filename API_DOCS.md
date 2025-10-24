@@ -82,6 +82,28 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
   }
   ```
 
+### Update User Name
+- **Endpoint:** `PATCH /auth/me`
+- **Description:** Update the authenticated user’s name
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "name": "New Name"
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "user": {
+      "id": "...",
+      "name": "New Name",
+      "email": "test@example.com"
+    }
+  }
+  ```
+
 ---
 
 ### Logout

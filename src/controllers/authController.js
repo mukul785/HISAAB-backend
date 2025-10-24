@@ -101,6 +101,25 @@ export const me = async (req, res, next) => {
   }
 };
 
+export const updateMe = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+    const { name } = req.body;
+    if (name === undefined) return res.status(400).json({ message: 'Name is required' });
+    const trimmed = typeof name === 'string' ? name.trim() : '';
+    if (!trimmed) return res.status(400).json({ message: 'Name must be a non-empty string' });
+
+    req.user.name = trimmed;
+    await req.user.save();
+
+    const userObj = req.user.toJSON();
+    delete userObj.password;
+    res.json({ user: userObj });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteUser = async (req, res, next) => {
   try {
     const userId = req.user?.id;
