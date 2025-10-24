@@ -50,8 +50,19 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-db.sync().then(() => {
+const skipDbSync = process.env.SKIP_DB_SYNC === 'true';
+
+if (skipDbSync) {
     app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        console.log(`Server running on port ${PORT} (skip DB sync)`);
     });
-}); 
+} else {
+    db.sync().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    }).catch(err => {
+        console.error('DB sync failed:', err);
+        process.exit(1);
+    });
+}

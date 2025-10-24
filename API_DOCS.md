@@ -1,6 +1,6 @@
 # HISAAB API - Detailed Documentation
 
-Base URL: `http://localhost:3000/api`
+Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
 
 ---
 
@@ -94,6 +94,16 @@ Base URL: `http://localhost:3000/api`
   { "message": "Logged out" }
   ```
 
+### Delete User
+- **Endpoint:** `DELETE /auth/me`
+- **Description:** Delete the authenticated user and all related data
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  { "message": "User and related data deleted" }
+  ```
+
 ---
 
 ## Accounts
@@ -127,9 +137,16 @@ Base URL: `http://localhost:3000/api`
 - **Body:**
   ```json
   {
-    "name": "Bank Account",
-    "balance": 0.0
+    "name": "Bank Account"
   }
+  ```
+- **Notes:**
+  - Initial balance is always `0.0`; omit the `balance` field.
+  - If a non-zero `balance` is provided, the API returns `400`.
+  - If `balance` is provided as `0`, it is ignored and set to `0.0`.
+- **Error Response (400):**
+  ```json
+  { "message": "Initial balance must be zero; omit balance field" }
   ```
 - **Sample Response:**
   ```json
@@ -166,14 +183,13 @@ Base URL: `http://localhost:3000/api`
 
 ### Update Account
 - **Endpoint:** `PUT /accounts/{account_id}`
-- **Description:** Update an account
+- **Description:** Update an account (account name is editable)
 - **Auth Required:** Yes
 - **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
 - **Body:**
   ```json
   {
-    "name": "Updated Name",
-    "balance": 500.0
+    "name": "Updated Name"
   }
   ```
 - **Sample Response:**
@@ -195,6 +211,13 @@ Base URL: `http://localhost:3000/api`
 - **Description:** Delete an account
 - **Auth Required:** Yes
 - **Headers:** `Authorization: Bearer <access_token>`
+- **Notes:**
+  - You cannot delete the last remaining account; the API returns `400`.
+  - If the deleted account was the default, another existing account is automatically set as default.
+- **Error Response (400):**
+  ```json
+  { "message": "Cannot delete the last account. User must have at least one account." }
+  ```
 - **Sample Response:**
   - Status: 204 No Content
 
@@ -663,4 +686,4 @@ Base URL: `http://localhost:3000/api`
 
 ---
 
-**Note:** All endpoints except register/login require `Authorization: Bearer <access_token>` header. 
+**Note:** All endpoints except register/login require `Authorization: Bearer <access_token>` header.

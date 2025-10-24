@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
 import Account from '../models/Account.js';
+import sequelize from '../db.js';
+import { Op } from 'sequelize';
+import Transaction from '../models/Transaction.js';
+import Invoice from '../models/Invoice.js';
+import InvoiceItem from '../models/InvoiceItem.js';
 
 export const register = async (req, res, next) => {
   try {
@@ -94,4 +99,50 @@ export const me = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-}; 
+};
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const t = await sequelize.transaction();
+    try {
+      // Delete tokens
+      await Token.destroy({ where: { user_id: userId }, transaction: t });
+
+      // Collect account ids
+      const accounts = await Account.findAll({ where: { user_id: userId }, transaction: t });
+      const accountIds = accounts.map(a => a.id);
+
+      // Delete transactions linked to user or their accounts
+      const orClauses = [{ user_id: userId }];
+      if (accountIds.length) {
+        orClauses.push({ account_id: { [Op.in]: accountIds } });
+      }
+      await Transaction.destroy({ where: { [Op.or]: orClauses }, transaction: t });
+
+      // Collect invoice ids, then delete invoice items and invoices
+      const invoices = await Invoice.findAll({ where: { user_id: userId }, transaction: t });
+      const invoiceIds = invoices.map(inv => inv.id);
+      if (invoiceIds.length) {
+        await InvoiceItem.destroy({ where: { invoice_id: { [Op.in]: invoiceIds } }, transaction: t });
+      }
+      await Invoice.destroy({ where: { user_id: userId }, transaction: t });
+
+      // Delete accounts
+      await Account.destroy({ where: { user_id: userId }, transaction: t });
+
+      // Finally delete user
+      await User.destroy({ where: { id: userId }, transaction: t });
+
+      await t.commit();
+      res.json({ message: 'User and related data deleted' });
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+  } catch (err) {
+    next(err);
+  }
+};

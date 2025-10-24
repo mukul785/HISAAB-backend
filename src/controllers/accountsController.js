@@ -1,13 +1,17 @@
 import Account from '../models/Account.js';
 import Transaction from '../models/Transaction.js';
+import sequelize from '../db.js';
 
 export const createAccount = async (req, res, next) => {
     try {
         const { name, balance } = req.body;
         if (!name) return res.status(400).json({ message: 'Account name is required' });
+        if (balance !== undefined && Number(balance) !== 0) {
+            return res.status(400).json({ message: 'Initial balance must be zero; omit balance field' });
+        }
         const account = await Account.create({
             name,
-            balance: balance !== undefined ? balance : 0.0,
+            balance: 0.0,
             user_id: req.user.id,
             created_at: new Date(),
             updated_at: new Date(),
@@ -53,10 +57,44 @@ export const updateAccount = async (req, res, next) => {
 
 export const deleteAccount = async (req, res, next) => {
     try {
-        const account = await Account.findOne({ where: { id: req.params.id, user_id: req.user.id } });
-        if (!account) return res.status(404).json({ message: 'Account not found' });
-        await account.destroy();
-        res.status(204).send();
+        const userId = req.user.id;
+
+        const t = await sequelize.transaction();
+        try {
+            const accounts = await Account.findAll({ where: { user_id: userId }, transaction: t });
+            if (!accounts || accounts.length === 0) {
+                await t.rollback();
+                return res.status(404).json({ message: 'No accounts found' });
+            }
+            if (accounts.length === 1) {
+                await t.rollback();
+                return res.status(400).json({ message: 'Cannot delete the last account. User must have at least one account.' });
+            }
+
+            const account = await Account.findOne({ where: { id: req.params.id, user_id: userId }, transaction: t });
+            if (!account) {
+                await t.rollback();
+                return res.status(404).json({ message: 'Account not found' });
+            }
+
+            const wasDefault = !!account.default;
+            await account.destroy({ transaction: t });
+
+            if (wasDefault) {
+                // Assign default to another remaining account
+                const newDefault = await Account.findOne({ where: { user_id: userId }, transaction: t });
+                if (newDefault) {
+                    newDefault.default = true;
+                    await newDefault.save({ transaction: t });
+                }
+            }
+
+            await t.commit();
+            res.status(204).send();
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
     } catch (err) {
         next(err);
     }
