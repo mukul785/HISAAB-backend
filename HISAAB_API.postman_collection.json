@@ -1,0 +1,1358 @@
+{
+  "info": {
+    "_postman_id": "hisaab-api-collection",
+    "name": "HISAAB API",
+    "description": "A modern API for financial management and tracking (Node.js/Express/PostgreSQL)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "User authentication and session management",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"account_name\": \"My Main Account\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user and create a default account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login and get JWT token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user info"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and blacklist current token"
+          },
+          "response": []
+        },
+        {
+          "name": "Inspect Token (Debug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/inspect-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "inspect-token"]
+            },
+            "description": "Debug endpoint to inspect JWT token claims"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Accounts",
+      "description": "Manage user accounts (e.g., Cash, Bank accounts)",
+      "item": [
+        {
+          "name": "List Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts"]
+            },
+            "description": "List all accounts for the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bank Account\",\n  \"balance\": 0.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/accounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts"]
+            },
+            "description": "Create a new account"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Total Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "balance"]
+            },
+            "description": "Get aggregated balance for all accounts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "account-uuid-here"
+                }
+              ]
+            },
+            "description": "Get details of a specific account"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Account Name\",\n  \"balance\": 500.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "account-uuid-here"
+                }
+              ]
+            },
+            "description": "Update an account"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "account-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete an account"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/:id/transactions?start_date=&end_date=&transaction_type=",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", ":id", "transactions"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "",
+                  "description": "Filter by start date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "",
+                  "description": "Filter by end date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "transaction_type",
+                  "value": "",
+                  "description": "Filter by type: sale, expense, transfer, other"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "account-uuid-here"
+                }
+              ]
+            },
+            "description": "List all transactions for a specific account"
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Account",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/:id/set-default",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", ":id", "set-default"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "account-uuid-here"
+                }
+              ]
+            },
+            "description": "Set the specified account as default"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "description": "Manage financial transactions (sales, expenses, transfers)",
+      "item": [
+        {
+          "name": "List Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?start_date=&end_date=&transaction_type=&category=&account_id=",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "",
+                  "description": "Filter by start date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "",
+                  "description": "Filter by end date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "transaction_type",
+                  "value": "",
+                  "description": "Filter by type: sale, expense, transfer, other"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "account_id",
+                  "value": "",
+                  "description": "Filter by account UUID"
+                }
+              ]
+            },
+            "description": "List all transactions with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.0,\n  \"description\": \"Office supplies\",\n  \"transaction_type\": \"expense\",\n  \"category\": \"Office\",\n  \"date\": \"2026-04-16T12:00:00Z\",\n  \"account_id\": \"account-uuid-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            },
+            "description": "Create a new transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Totals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/totals?account_id=",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "totals"],
+              "query": [
+                {
+                  "key": "account_id",
+                  "value": "",
+                  "description": "Optional: Filter by account UUID. If omitted, returns totals for all accounts."
+                }
+              ]
+            },
+            "description": "Get total sales, expenses, and balance"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "transaction-uuid-here"
+                }
+              ]
+            },
+            "description": "Get details of a specific transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 200.0,\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "transaction-uuid-here"
+                }
+              ]
+            },
+            "description": "Update a transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "transaction-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete a transaction"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "description": "Manage invoices with line items and tax calculations",
+      "item": [
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices?status=&start_date=&end_date=&customer_name=",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status: draft, sent, paid, cancelled, overdue"
+                },
+                {
+                  "key": "start_date",
+                  "value": "",
+                  "description": "Filter by issue date start (YYYY-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "",
+                  "description": "Filter by issue date end (YYYY-MM-DD)"
+                },
+                {
+                  "key": "customer_name",
+                  "value": "",
+                  "description": "Filter by customer name"
+                }
+              ]
+            },
+            "description": "List all invoices with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Acme Corp\",\n  \"customer_email\": \"billing@acme.com\",\n  \"customer_address\": \"123 Business St\",\n  \"due_date\": \"2026-05-16\",\n  \"tax_rate\": 18,\n  \"notes\": \"Thank you for your business\",\n  \"items\": [\n    {\n      \"description\": \"Web Development\",\n      \"quantity\": 10,\n      \"unit_price\": 100,\n      \"tax_included\": false\n    },\n    {\n      \"description\": \"Hosting (1 year)\",\n      \"quantity\": 1,\n      \"unit_price\": 200,\n      \"tax_included\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices"]
+            },
+            "description": "Create a new invoice with items"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invoice",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Get a specific invoice with items"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Updated Customer Name\",\n  \"status\": \"sent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Update an invoice"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete an invoice"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Invoice as Paid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/:id/mark-as-paid",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", ":id", "mark-as-paid"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Mark invoice as paid and create a sale transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Recalculate Invoice Taxes",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/:id/recalculate-taxes?tax_rate=",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", ":id", "recalculate-taxes"],
+              "query": [
+                {
+                  "key": "tax_rate",
+                  "value": "",
+                  "description": "Optional new tax rate"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Recalculate taxes for an invoice"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tax",
+      "description": "GST/Tax calculations and filing features",
+      "item": [
+        {
+          "name": "Calculate GST",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tax/gst?amount=1000&tax_included=false&tax_rate=18",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "gst"],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "1000",
+                  "description": "Amount to calculate GST for (required)"
+                },
+                {
+                  "key": "tax_included",
+                  "value": "false",
+                  "description": "Whether amount includes tax (default: false)"
+                },
+                {
+                  "key": "tax_rate",
+                  "value": "18",
+                  "description": "Tax rate percentage (default: 18)"
+                }
+              ]
+            },
+            "description": "Calculate GST for a given amount with CGST/SGST breakdown"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate GST for Invoice",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tax/calculate-for-invoice/:invoice_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "calculate-for-invoice", ":invoice_id"],
+              "variable": [
+                {
+                  "key": "invoice_id",
+                  "value": "invoice-uuid-here"
+                }
+              ]
+            },
+            "description": "Calculate GST for a specific invoice"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tax Filing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tax/filing?start_date=2026-01-01&end_date=2026-03-31&tax_type=gst&period=quarterly",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "filing"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01",
+                  "description": "Period start date (required)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-03-31",
+                  "description": "Period end date (required)"
+                },
+                {
+                  "key": "tax_type",
+                  "value": "gst",
+                  "description": "Tax type (default: gst)"
+                },
+                {
+                  "key": "period",
+                  "value": "quarterly",
+                  "description": "Period type (default: quarterly)"
+                }
+              ]
+            },
+            "description": "Get tax filing summary for a period"
+          },
+          "response": []
+        },
+        {
+          "name": "Auto Generate Tax Filing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tax/filing/auto-generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "filing", "auto-generate"]
+            },
+            "description": "Auto-generate tax filing for the last quarter"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Tax Filing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_start\": \"2026-01-01\",\n  \"period_end\": \"2026-03-31\",\n  \"tax_type\": \"gst\",\n  \"total_tax_liability\": 1300.0,\n  \"payment_reference\": \"TXN123\",\n  \"notes\": \"Paid via bank\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tax/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "submit"]
+            },
+            "description": "Submit tax filing information"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tax Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tax/report?year=2026&tax_type=gst",
+              "host": ["{{baseUrl}}"],
+              "path": ["tax", "report"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026",
+                  "description": "Year for report (required)"
+                },
+                {
+                  "key": "tax_type",
+                  "value": "gst",
+                  "description": "Tax type (optional)"
+                }
+              ]
+            },
+            "description": "Fetch historical tax reports"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "description": "Inventory management with items, categories, images, and bulk upload",
+      "item": [
+        {
+          "name": "Categories",
+          "description": "Manage inventory categories",
+          "item": [
+            {
+              "name": "List Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "categories"]
+                },
+                "description": "List all inventory categories"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Electronic devices and accessories\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "categories"]
+                },
+                "description": "Create a new inventory category"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Category",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Category\",\n  \"description\": \"Updated description\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/categories/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "categories", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "category-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Update an inventory category"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Category",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/categories/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "categories", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "category-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Delete a category (items will have category_id set to null)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Items",
+          "description": "Manage inventory items",
+          "item": [
+            {
+              "name": "List Inventory Items",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory?page=1&limit=50&search=&category_id=&is_active=&low_stock=&sort=created_at&order=desc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "description": "Items per page (use 'all' for no pagination)"
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search by name, SKU, or description"
+                    },
+                    {
+                      "key": "category_id",
+                      "value": "",
+                      "description": "Filter by category UUID"
+                    },
+                    {
+                      "key": "is_active",
+                      "value": "",
+                      "description": "Filter by active status (true/false)"
+                    },
+                    {
+                      "key": "low_stock",
+                      "value": "",
+                      "description": "Filter items below threshold (true/false)"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "created_at",
+                      "description": "Sort field: name, sku_id, stock_quantity, sell_price, cost_price, created_at, updated_at"
+                    },
+                    {
+                      "key": "order",
+                      "value": "desc",
+                      "description": "Sort order: asc, desc"
+                    }
+                  ]
+                },
+                "description": "List all inventory items with pagination, filtering, and search"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Item (Auto SKU)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"description\": \"Latest iPhone model\",\n  \"stock_quantity\": 50,\n  \"sell_price\": 999.99,\n  \"cost_price\": 750.00,\n  \"auto_index\": true,\n  \"category_id\": \"category-uuid-here\",\n  \"low_stock_threshold\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory"]
+                },
+                "description": "Create a new inventory item with auto-generated SKU"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Item (Manual SKU)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Samsung Galaxy S24\",\n  \"stock_quantity\": 30,\n  \"sell_price\": 899.99,\n  \"cost_price\": 650.00,\n  \"auto_index\": false,\n  \"sku_id\": \"SAMSUNG-S24-001\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory"]
+                },
+                "description": "Create a new inventory item with custom SKU"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Inventory Item",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Get a specific inventory item with category and images"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Inventory Item",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Item Name\",\n  \"stock_quantity\": 100,\n  \"sell_price\": 1099.99,\n  \"is_active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Update an inventory item"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Inventory Item",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Delete an inventory item (also deletes all images)"
+              },
+              "response": []
+            },
+            {
+              "name": "Adjust Stock",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"adjustment\": -5,\n  \"reason\": \"Sold 5 units\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "stock"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Adjust stock quantity (positive to add, negative to subtract)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Low Stock Items",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/low-stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "low-stock"]
+                },
+                "description": "Get items that are at or below their low stock threshold"
+              },
+              "response": []
+            },
+            {
+              "name": "Export Inventory",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/export?format=xlsx",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "export"],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "xlsx",
+                      "description": "Export format: xlsx or csv"
+                    }
+                  ]
+                },
+                "description": "Export inventory to spreadsheet file"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Bulk Upload",
+          "description": "Upload spreadsheet to create multiple items",
+          "item": [
+            {
+              "name": "Upload Spreadsheet",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "",
+                      "description": "Excel (.xlsx, .xls) or CSV file (max 10MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/bulk-upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "bulk-upload"]
+                },
+                "description": "Upload a spreadsheet to create multiple inventory items. Required columns: name, stock_quantity, sell_price, cost_price. Optional: sku_id, category, description, low_stock_threshold"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Upload Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/bulk-upload/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "bulk-upload", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "upload-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Get the status and results of a bulk upload"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Images",
+          "description": "Manage multiple images per inventory item (max 10 per item)",
+          "item": [
+            {
+              "name": "List Item Images",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/images",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "images"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Get all images for an inventory item"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Item Image",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": "",
+                      "description": "Image file: JPEG, PNG, WebP, GIF (max 5MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/images",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "images"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Add a new image to an inventory item (max 10 per item). First image is automatically set as primary."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Item Image",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/images/:imageId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "images", ":imageId"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    },
+                    {
+                      "key": "imageId",
+                      "value": "image-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Delete a specific image. If primary is deleted, next image becomes primary."
+              },
+              "response": []
+            },
+            {
+              "name": "Set Primary Image",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/images/:imageId/primary",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "images", ":imageId", "primary"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    },
+                    {
+                      "key": "imageId",
+                      "value": "image-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Set an image as the primary image for the item"
+              },
+              "response": []
+            },
+            {
+              "name": "Reorder Images",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"image_order\": [\"image3-uuid\", \"image1-uuid\", \"image2-uuid\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/:id/images/reorder",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", ":id", "images", "reorder"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "item-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Reorder images for an inventory item"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
