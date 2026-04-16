@@ -10,10 +10,14 @@ import accountsRoutes from './routes/accounts.js';
 import transactionsRoutes from './routes/transactions.js';
 import invoicesRoutes from './routes/invoices.js';
 import taxRoutes from './routes/tax.js';
+import inventoryRoutes from './routes/inventory.js';
 import './models/associations.js';
 
 const app = express();
 app.use(express.json());
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
 
 // Serve API docs as HTML at /docs with basic CSS for spacing
 app.get('/docs', (req, res) => {
@@ -42,6 +46,7 @@ app.use('/api/accounts', accountsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/tax', taxRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

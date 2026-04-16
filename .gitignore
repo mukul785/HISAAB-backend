@@ -5,3 +5,6 @@ node_modules
 .cursorignore
 postgres.session.sql
 openapi.json
+
+# Uploads
+uploads/

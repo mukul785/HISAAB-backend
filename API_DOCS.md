@@ -128,6 +128,32 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
 
 ---
 
+### Inspect Token (Debug)
+- **Endpoint:** `GET /auth/inspect-token`
+- **Description:** Debug endpoint to inspect JWT token claims (development only)
+- **Auth Required:** No (but requires token in header)
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "header": { "alg": "HS256", "typ": "JWT" },
+    "payload": { "userId": "...", "iat": 1713264000, "exp": 1715856000 },
+    "analysis": {
+      "issued_at": "2026-04-16T10:00:00.000Z",
+      "expires_at": "2026-05-16T10:00:00.000Z",
+      "expires_in_seconds": 2592000,
+      "expires_in_hours": "720.00",
+      "expires_in_days": "30.00",
+      "is_expired": false,
+      "is_valid": true,
+      "is_blacklisted": false,
+      "verify_error": null
+    }
+  }
+  ```
+
+---
+
 ## Accounts
 
 ### List Accounts
@@ -703,6 +729,484 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
     "year": 2024,
     "total_tax_paid": 10000.0,
     "filings": []
+  }
+  ```
+
+---
+
+## Inventory
+
+### Categories
+
+#### List Categories
+- **Endpoint:** `GET /inventory/categories`
+- **Description:** List all inventory categories for the current user
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  [
+    {
+      "id": "...",
+      "user_id": "...",
+      "name": "Electronics",
+      "description": "Electronic devices and accessories",
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ]
+  ```
+
+---
+
+#### Create Category
+- **Endpoint:** `POST /inventory/categories`
+- **Description:** Create a new inventory category
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "name": "Electronics",
+    "description": "Electronic devices and accessories"
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "user_id": "...",
+    "name": "Electronics",
+    "description": "Electronic devices and accessories",
+    "created_at": "...",
+    "updated_at": "..."
+  }
+  ```
+
+---
+
+#### Update Category
+- **Endpoint:** `PUT /inventory/categories/{category_id}`
+- **Description:** Update an inventory category
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "name": "Updated Category Name",
+    "description": "Updated description"
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "name": "Updated Category Name",
+    "description": "Updated description",
+    ...
+  }
+  ```
+
+---
+
+#### Delete Category
+- **Endpoint:** `DELETE /inventory/categories/{category_id}`
+- **Description:** Delete a category (items in category will have category_id set to null)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  - Status: 204 No Content
+
+---
+
+### Inventory Items
+
+#### List Inventory Items
+- **Endpoint:** `GET /inventory/`
+- **Description:** List all inventory items with pagination, filtering, and search
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Query Params (optional):**
+  - `page` - Page number (default: 1)
+  - `limit` - Items per page (default: 50, use "all" for no pagination)
+  - `search` - Search by name, SKU, or description
+  - `category_id` - Filter by category UUID
+  - `is_active` - Filter by active status (true/false)
+  - `low_stock` - Filter items below threshold (true/false)
+  - `sort` - Sort field (name, sku_id, stock_quantity, sell_price, cost_price, created_at, updated_at)
+  - `order` - Sort order (asc/desc, default: desc)
+- **Sample Request:** `GET /inventory?page=1&limit=20&search=iphone&sort=name&order=asc`
+- **Sample Response:**
+  ```json
+  {
+    "items": [
+      {
+        "id": "...",
+        "name": "iPhone 15 Pro",
+        "sku_id": "SKU-A7X9K2M4",
+        "stock_quantity": 50,
+        "sell_price": 999.99,
+        "cost_price": 750.00,
+        "category_id": "...",
+        "image_url": "/uploads/images/inventory/...",
+        "is_active": true,
+        "low_stock_threshold": 5,
+        "InventoryCategory": { "id": "...", "name": "Electronics" },
+        "InventoryImages": [
+          { "id": "...", "image_url": "...", "is_primary": true, "sort_order": 1 }
+        ],
+        "created_at": "...",
+        "updated_at": "..."
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total_items": 150,
+      "total_pages": 8
+    }
+  }
+  ```
+
+---
+
+#### Create Inventory Item
+- **Endpoint:** `POST /inventory/`
+- **Description:** Create a new inventory item (with auto or manual SKU)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body (Auto SKU):**
+  ```json
+  {
+    "name": "iPhone 15 Pro",
+    "description": "Latest iPhone model",
+    "stock_quantity": 50,
+    "sell_price": 999.99,
+    "cost_price": 750.00,
+    "auto_index": true,
+    "category_id": "uuid-of-category",
+    "low_stock_threshold": 5
+  }
+  ```
+- **Body (Manual SKU):**
+  ```json
+  {
+    "name": "Samsung Galaxy S24",
+    "stock_quantity": 30,
+    "sell_price": 899.99,
+    "cost_price": 650.00,
+    "auto_index": false,
+    "sku_id": "SAMSUNG-S24-001"
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "name": "iPhone 15 Pro",
+    "sku_id": "SKU-A7X9K2M4",
+    "stock_quantity": 50,
+    "sell_price": 999.99,
+    "cost_price": 750.00,
+    "auto_index": true,
+    "category_id": "...",
+    "image_url": null,
+    "is_active": true,
+    "low_stock_threshold": 5,
+    "created_at": "...",
+    "updated_at": "..."
+  }
+  ```
+
+---
+
+#### Get Inventory Item
+- **Endpoint:** `GET /inventory/{item_id}`
+- **Description:** Get details of a specific inventory item with category and images
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "name": "iPhone 15 Pro",
+    "sku_id": "SKU-A7X9K2M4",
+    "stock_quantity": 50,
+    "sell_price": 999.99,
+    "cost_price": 750.00,
+    "InventoryCategory": { "id": "...", "name": "Electronics" },
+    "InventoryImages": [
+      { "id": "...", "image_url": "...", "is_primary": true, "sort_order": 1 },
+      { "id": "...", "image_url": "...", "is_primary": false, "sort_order": 2 }
+    ],
+    ...
+  }
+  ```
+
+---
+
+#### Update Inventory Item
+- **Endpoint:** `PUT /inventory/{item_id}`
+- **Description:** Update an inventory item
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "name": "Updated Name",
+    "stock_quantity": 100,
+    "sell_price": 1099.99,
+    "is_active": true
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "name": "Updated Name",
+    "stock_quantity": 100,
+    ...
+  }
+  ```
+
+---
+
+#### Delete Inventory Item
+- **Endpoint:** `DELETE /inventory/{item_id}`
+- **Description:** Delete an inventory item (also deletes all associated images)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  - Status: 204 No Content
+
+---
+
+#### Adjust Stock
+- **Endpoint:** `PATCH /inventory/{item_id}/stock`
+- **Description:** Adjust stock quantity (increment or decrement)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "adjustment": -5,
+    "reason": "Sold 5 units"
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "name": "iPhone 15 Pro",
+    "sku_id": "SKU-A7X9K2M4",
+    "previous_quantity": 50,
+    "adjustment_applied": -5,
+    "stock_quantity": 45,
+    "reason": "Sold 5 units"
+  }
+  ```
+
+---
+
+#### Get Low Stock Items
+- **Endpoint:** `GET /inventory/low-stock`
+- **Description:** Get items that are at or below their low stock threshold
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "items": [
+      {
+        "id": "...",
+        "name": "iPhone 15 Pro",
+        "stock_quantity": 3,
+        "low_stock_threshold": 5,
+        ...
+      }
+    ],
+    "count": 12
+  }
+  ```
+
+---
+
+#### Export Inventory
+- **Endpoint:** `GET /inventory/export`
+- **Description:** Export inventory to spreadsheet file
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Query Params (optional):** `format` (xlsx or csv, default: xlsx)
+- **Sample Response:**
+  - File download: `inventory_export_2026-04-16.xlsx`
+
+---
+
+### Bulk Upload
+
+#### Upload Spreadsheet
+- **Endpoint:** `POST /inventory/bulk-upload`
+- **Description:** Upload a spreadsheet (Excel/CSV) to create multiple inventory items
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: multipart/form-data`
+- **Body:** `file` (Excel .xlsx/.xls or CSV file, max 10MB)
+- **Spreadsheet Format:**
+  | Column | Required | Description |
+  |--------|----------|-------------|
+  | name | Yes | Item name |
+  | stock_quantity | Yes | Integer |
+  | sell_price | Yes | Decimal |
+  | cost_price | Yes | Decimal |
+  | sku_id | No | If empty, auto-generated |
+  | category | No | Category name (created if not exists) |
+  | description | No | Item description |
+  | low_stock_threshold | No | Integer (default: 10) |
+- **Sample Response:**
+  ```json
+  {
+    "upload_id": "...",
+    "status": "completed",
+    "total_rows": 150,
+    "success_count": 148,
+    "error_count": 2,
+    "error_details": [
+      { "row": 45, "field": "sell_price", "error": "Invalid sell_price" },
+      { "row": 89, "field": "sku_id", "error": "SKU \"ABC123\" already exists" }
+    ]
+  }
+  ```
+
+---
+
+#### Get Bulk Upload Status
+- **Endpoint:** `GET /inventory/bulk-upload/{upload_id}`
+- **Description:** Get the status and results of a bulk upload
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "user_id": "...",
+    "filename": "inventory.xlsx",
+    "status": "completed",
+    "total_rows": 150,
+    "success_count": 148,
+    "error_count": 2,
+    "error_details": [...],
+    "created_at": "..."
+  }
+  ```
+
+---
+
+### Item Images
+
+**Note:** Each inventory item can have up to 10 images. The first image uploaded is automatically set as primary.
+
+#### List Item Images
+- **Endpoint:** `GET /inventory/{item_id}/images`
+- **Description:** Get all images for an inventory item
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "item_id": "...",
+    "images": [
+      {
+        "id": "...",
+        "image_url": "/uploads/images/inventory/...",
+        "is_primary": true,
+        "sort_order": 1,
+        "created_at": "..."
+      },
+      {
+        "id": "...",
+        "image_url": "/uploads/images/inventory/...",
+        "is_primary": false,
+        "sort_order": 2,
+        "created_at": "..."
+      }
+    ],
+    "count": 2
+  }
+  ```
+
+---
+
+#### Add Item Image
+- **Endpoint:** `POST /inventory/{item_id}/images`
+- **Description:** Add a new image to an inventory item (max 10 per item)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: multipart/form-data`
+- **Body:** `image` (JPEG, PNG, WebP, or GIF file, max 5MB)
+- **Sample Response:**
+  ```json
+  {
+    "id": "...",
+    "item_id": "...",
+    "image_url": "/uploads/images/inventory/...",
+    "is_primary": true,
+    "sort_order": 1,
+    "created_at": "..."
+  }
+  ```
+
+---
+
+#### Delete Item Image
+- **Endpoint:** `DELETE /inventory/{item_id}/images/{image_id}`
+- **Description:** Delete a specific image (if primary is deleted, next image becomes primary)
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  { "message": "Image deleted" }
+  ```
+
+---
+
+#### Set Primary Image
+- **Endpoint:** `PATCH /inventory/{item_id}/images/{image_id}/primary`
+- **Description:** Set an image as the primary image for the item
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "message": "Primary image updated",
+    "image": {
+      "id": "...",
+      "image_url": "...",
+      "is_primary": true,
+      ...
+    }
+  }
+  ```
+
+---
+
+#### Reorder Images
+- **Endpoint:** `PUT /inventory/{item_id}/images/reorder`
+- **Description:** Reorder images for an inventory item
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "image_order": ["image3-uuid", "image1-uuid", "image2-uuid"]
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "message": "Image order updated",
+    "images": [
+      { "id": "image3-uuid", "sort_order": 1, ... },
+      { "id": "image1-uuid", "sort_order": 2, ... },
+      { "id": "image2-uuid", "sort_order": 3, ... }
+    ]
   }
   ```
 

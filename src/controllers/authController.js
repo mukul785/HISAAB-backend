@@ -61,7 +61,9 @@ export const login = async (req, res, next) => {
     }
     const account = await Account.findOne({ where: { user_id: user.id, default: true } });
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    res.json({ user, access_token: token, token_type: 'bearer', account });
+    const userObj = user.toJSON();
+    delete userObj.password;
+    res.json({ user: userObj, access_token: token, token_type: 'bearer', account });
   } catch (err) {
     next(err);
   }
@@ -96,6 +98,58 @@ export const me = async (req, res, next) => {
     const userObj = req.user.toJSON();
     delete userObj.password;
     res.json(userObj);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Debug endpoint to inspect token claims (for development/testing only)
+export const inspectToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+    const token = authHeader.split(' ')[1];
+    
+    // Decode without verification to see claims
+    const decoded = jwt.decode(token, { complete: true });
+    if (!decoded) {
+      return res.status(400).json({ message: 'Invalid token format' });
+    }
+    
+    // Also verify to check if it's valid
+    let isValid = true;
+    let verifyError = null;
+    try {
+      jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      isValid = false;
+      verifyError = err.message;
+    }
+    
+    // Check if blacklisted
+    const blacklisted = await Token.findOne({ where: { token, revoked: true } });
+    
+    const now = Math.floor(Date.now() / 1000);
+    const exp = decoded.payload.exp;
+    const iat = decoded.payload.iat;
+    
+    res.json({
+      header: decoded.header,
+      payload: decoded.payload,
+      analysis: {
+        issued_at: new Date(iat * 1000).toISOString(),
+        expires_at: new Date(exp * 1000).toISOString(),
+        expires_in_seconds: exp - now,
+        expires_in_hours: ((exp - now) / 3600).toFixed(2),
+        expires_in_days: ((exp - now) / 86400).toFixed(2),
+        is_expired: now > exp,
+        is_valid: isValid,
+        is_blacklisted: !!blacklisted,
+        verify_error: verifyError,
+      }
+    });
   } catch (err) {
     next(err);
   }
