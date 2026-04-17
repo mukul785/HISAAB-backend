@@ -1,6 +1,12 @@
 import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
 import { Op } from 'sequelize';
+import { hasFeature, abResponse } from '../utils/abHelper.js';
+import { 
+    updateMonthlyBalanceOnCreate, 
+    updateMonthlyBalanceOnDelete,
+    getMonthlySummary 
+} from '../utils/monthlyBalanceHelper.js';
 
 export const getTransactions = async (req, res, next) => {
     try {
@@ -41,15 +47,28 @@ export const createTransaction = async (req, res, next) => {
             else if (transaction_type === 'expense') account.balance -= amount;
             await account.save();
         }
+        const transactionDate = date ? new Date(date) : new Date();
         const transaction = await Transaction.create({
             amount,
             description,
             transaction_type,
             category,
-            date: date ? new Date(date) : new Date(),
+            date: transactionDate,
             user_id: req.user.id,
             account_id: account_id || null,
         });
+
+        // Update monthly balance if mtur feature is enabled
+        if (account_id && await hasFeature(req, 'mtur')) {
+            await updateMonthlyBalanceOnCreate(
+                req.user.id,
+                account_id,
+                transaction_type,
+                amount,
+                transactionDate
+            );
+        }
+
         res.status(201).json(transaction);
     } catch (err) {
         next(err);
@@ -89,7 +108,28 @@ export const deleteTransaction = async (req, res, next) => {
     try {
         const transaction = await Transaction.findOne({ where: { id: req.params.id, user_id: req.user.id } });
         if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
-        // Optionally update account balance here
+
+        // Update monthly balance if mtur feature is enabled (before deleting)
+        if (transaction.account_id && await hasFeature(req, 'mtur')) {
+            await updateMonthlyBalanceOnDelete(
+                req.user.id,
+                transaction.account_id,
+                transaction.transaction_type,
+                transaction.amount,
+                transaction.date
+            );
+        }
+
+        // Update account balance (reverse the transaction effect)
+        if (transaction.account_id) {
+            const account = await Account.findOne({ where: { id: transaction.account_id, user_id: req.user.id } });
+            if (account) {
+                if (transaction.transaction_type === 'sale') account.balance -= transaction.amount;
+                else if (transaction.transaction_type === 'expense') account.balance += transaction.amount;
+                await account.save();
+            }
+        }
+
         await transaction.destroy();
         res.status(204).send();
     } catch (err) {
@@ -130,8 +170,19 @@ export const getTransactionTotals = async (req, res, next) => {
             const accounts = await Account.findAll({ where: { user_id: userId } });
             balance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
         }
-        
-        res.json({ total_sales, total_expenses, balance });
+
+        // Control response (AB=0)
+        const controlResponse = { total_sales, total_expenses, balance };
+
+        // Experiment response (AB=1) - includes monthly breakdown
+        let experimentResponse = { total_sales, total_expenses, balance };
+        if (await hasFeature(req, 'mtur')) {
+            const monthlyData = await getMonthlySummary(userId, { limit: 12 });
+            experimentResponse.monthly_breakdown = monthlyData;
+        }
+
+        const response = await abResponse(req, 'mtur', controlResponse, experimentResponse);
+        res.json(response);
     } catch (err) {
         next(err);
     }

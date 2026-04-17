@@ -11,6 +11,7 @@ import BulkUploadLog from './BulkUploadLog.js';
 import ABFeature from './ABFeature.js';
 import UserABConfig from './UserABConfig.js';
 import AppInitLog from './AppInitLog.js';
+import MonthlyBalance from './MonthlyBalance.js';
 
 // User - Account
 User.hasMany(Account, { foreignKey: 'user_id' });
@@ -71,4 +72,12 @@ UserABConfig.belongsTo(ABFeature, { foreignKey: 'feature_id', as: 'feature' });
 User.hasMany(AppInitLog, { foreignKey: 'user_id', as: 'appInitLogs' });
 AppInitLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-export { User, Account, Transaction, Invoice, InvoiceItem, Token, InventoryItem, InventoryCategory, InventoryImage, BulkUploadLog, ABFeature, UserABConfig, AppInitLog }; 
+// User - MonthlyBalance
+User.hasMany(MonthlyBalance, { foreignKey: 'user_id', as: 'monthlyBalances' });
+MonthlyBalance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Account - MonthlyBalance
+Account.hasMany(MonthlyBalance, { foreignKey: 'account_id', as: 'monthlyBalances' });
+MonthlyBalance.belongsTo(Account, { foreignKey: 'account_id', as: 'account' });
+
+export { User, Account, Transaction, Invoice, InvoiceItem, Token, InventoryItem, InventoryCategory, InventoryImage, BulkUploadLog, ABFeature, UserABConfig, AppInitLog, MonthlyBalance }; 
