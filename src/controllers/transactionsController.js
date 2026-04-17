@@ -10,7 +10,10 @@ export const getTransactions = async (req, res, next) => {
         if (req.query.transaction_type) where.transaction_type = req.query.transaction_type;
         if (req.query.category) where.category = req.query.category;
         if (req.query.account_id) where.account_id = req.query.account_id;
-        const transactions = await Transaction.findAll({ where });
+        const transactions = await Transaction.findAll({ 
+            where,
+            order: [['date', 'DESC'], ['created_at', 'DESC']]
+        });
         res.json(transactions);
     } catch (err) {
         next(err);
