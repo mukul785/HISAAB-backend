@@ -1212,4 +1212,292 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
 
 ---
 
+## App Init & A/B Testing
+
+The App Init system provides application initialization with A/B testing capabilities. Each user has personalized feature flags that control which features they see.
+
+### App Init
+- **Endpoint:** `POST /app/init`
+- **Description:** Initialize the app and get user's A/B feature flags
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "client": "Android App",
+    "version": "1.1",
+    "device_info": {
+      "os_version": "14",
+      "device_model": "Pixel 8"
+    }
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "user": {
+      "id": "user-uuid",
+      "name": "Test User",
+      "email": "test@example.com"
+    },
+    "client_info": {
+      "client": "Android App",
+      "version": "1.1"
+    },
+    "ab_flags": {
+      "csra": 0,
+      "new_checkout": 1,
+      "dark_mode": 0
+    },
+    "features_count": 3,
+    "timestamp": "2024-01-15T10:30:00.000Z"
+  }
+  ```
+
+---
+
+### Get User's AB Values
+- **Endpoint:** `GET /app/ab`
+- **Description:** Get all A/B feature values for the authenticated user
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "user_id": "user-uuid",
+    "ab_values": [
+      {
+        "feature_key": "csra",
+        "name": "CSRA Feature",
+        "description": "Customer Service Response Automation",
+        "value": 0,
+        "is_assigned": true,
+        "assigned_at": "2024-01-15T10:30:00.000Z",
+        "source": "auto"
+      }
+    ],
+    "total_features": 1
+  }
+  ```
+
+---
+
+### Switch User's AB Value
+- **Endpoint:** `PATCH /app/ab/{feature_key}`
+- **Description:** Toggle/switch a specific A/B feature for the authenticated user
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "value": 1
+  }
+  ```
+  Note: `value` can be `0`, `1`, `true`, or `false`
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "feature_key": "csra",
+    "name": "CSRA Feature",
+    "previous_value": 0,
+    "new_value": 1,
+    "message": "A/B flag \"csra\" updated to 1"
+  }
+  ```
+
+---
+
+## Admin - A/B Feature Management
+
+### Get All Features
+- **Endpoint:** `GET /app/admin/features`
+- **Description:** Get all A/B features with usage statistics
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "features": [
+      {
+        "id": "feature-uuid",
+        "feature_key": "csra",
+        "name": "CSRA Feature",
+        "description": "Customer Service Response Automation",
+        "default_value": false,
+        "is_active": true,
+        "rollout_percentage": 50,
+        "metadata": null,
+        "createdAt": "2024-01-15T10:00:00.000Z",
+        "updatedAt": "2024-01-15T10:00:00.000Z",
+        "stats": {
+          "total_users": 100,
+          "experiment_users": 48
+        }
+      }
+    ],
+    "total": 1
+  }
+  ```
+
+---
+
+### Create Feature
+- **Endpoint:** `POST /app/admin/features`
+- **Description:** Create a new A/B feature
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "feature_key": "new_feature",
+    "name": "New Feature",
+    "description": "Description of the new feature",
+    "default_value": false,
+    "is_active": true,
+    "rollout_percentage": 25,
+    "metadata": {
+      "experiment_id": "exp-123"
+    }
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "feature": {
+      "id": "feature-uuid",
+      "feature_key": "new_feature",
+      "name": "New Feature",
+      ...
+    },
+    "message": "Feature \"new_feature\" created successfully"
+  }
+  ```
+
+---
+
+### Update Feature
+- **Endpoint:** `PATCH /app/admin/features/{feature_key}`
+- **Description:** Update an existing A/B feature
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "name": "Updated Feature Name",
+    "is_active": false,
+    "rollout_percentage": 75
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "feature": { ... },
+    "message": "Feature \"new_feature\" updated successfully"
+  }
+  ```
+
+---
+
+### Delete Feature
+- **Endpoint:** `DELETE /app/admin/features/{feature_key}`
+- **Description:** Delete an A/B feature and all associated user configurations
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "message": "Feature \"new_feature\" deleted along with 50 user configurations"
+  }
+  ```
+
+---
+
+### Get AB Values for Specific User
+- **Endpoint:** `GET /app/admin/users/{user_id}/ab`
+- **Description:** Get all A/B feature values for a specific user
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "user": {
+      "id": "user-uuid",
+      "name": "Test User",
+      "email": "test@example.com"
+    },
+    "ab_values": [
+      {
+        "feature_key": "csra",
+        "name": "CSRA Feature",
+        "is_active": true,
+        "value": 1,
+        "is_assigned": true,
+        "assigned_at": "2024-01-15T10:30:00.000Z",
+        "source": "manual"
+      }
+    ],
+    "total_features": 1
+  }
+  ```
+
+---
+
+### Set AB Value for Specific User
+- **Endpoint:** `PATCH /app/admin/users/{user_id}/ab/{feature_key}`
+- **Description:** Set A/B value for a specific user
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "value": 1
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "user_id": "user-uuid",
+    "feature_key": "csra",
+    "previous_value": 0,
+    "new_value": 1,
+    "message": "A/B flag \"csra\" for user user-uuid updated to 1"
+  }
+  ```
+
+---
+
+### Bulk Assign AB Values
+- **Endpoint:** `POST /app/admin/features/{feature_key}/bulk-assign`
+- **Description:** Assign A/B value to multiple users at once
+- **Auth Required:** Yes (Admin)
+- **Headers:** `Authorization: Bearer <access_token>`, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "user_ids": ["user-uuid-1", "user-uuid-2", "user-uuid-3"],
+    "value": 1
+  }
+  ```
+- **Sample Response:**
+  ```json
+  {
+    "success": true,
+    "feature_key": "csra",
+    "value": 1,
+    "total_processed": 3,
+    "successful": 3
+  }
+  ```
+
+---
+
 **Note:** All endpoints except register/login require `Authorization: Bearer <access_token>` header.

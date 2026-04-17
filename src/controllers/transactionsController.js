@@ -5,8 +5,14 @@ import { Op } from 'sequelize';
 export const getTransactions = async (req, res, next) => {
     try {
         const where = { user_id: req.user.id };
-        if (req.query.start_date) where.date = { ...where.date, [Op.gte]: new Date(req.query.start_date) };
-        if (req.query.end_date) where.date = { ...where.date, [Op.lte]: new Date(req.query.end_date) };
+        if (req.query.start_date) {
+            where.date = { ...where.date, [Op.gte]: new Date(req.query.start_date) };
+        }
+        if (req.query.end_date) {
+            const endDate = new Date(req.query.end_date);
+            endDate.setUTCHours(23, 59, 59, 999); // Include entire day
+            where.date = { ...where.date, [Op.lte]: endDate };
+        }
         if (req.query.transaction_type) where.transaction_type = req.query.transaction_type;
         if (req.query.category) where.category = req.query.category;
         if (req.query.account_id) where.account_id = req.query.account_id;
