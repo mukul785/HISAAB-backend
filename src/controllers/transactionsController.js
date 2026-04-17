@@ -90,15 +90,38 @@ export const deleteTransaction = async (req, res, next) => {
 
 export const getTransactionTotals = async (req, res, next) => {
     try {
-        const accId=req.account.id;
-        const transactions = await Transaction.findAll({ where: { account_id: accId } });
+        const userId = req.user.id;
+        const accountId = req.query.account_id;
+        
+        // Build where clause
+        const where = { user_id: userId };
+        if (accountId) {
+            // Verify account belongs to user
+            const account = await Account.findOne({ where: { id: accountId, user_id: userId } });
+            if (!account) {
+                return res.status(404).json({ message: 'Account not found' });
+            }
+            where.account_id = accountId;
+        }
+        
+        const transactions = await Transaction.findAll({ where });
         let total_sales = 0, total_expenses = 0;
         for (const t of transactions) {
             if (t.transaction_type === 'sale') total_sales += t.amount;
             else if (t.transaction_type === 'expense') total_expenses += t.amount;
         }
-        const account = await Account.findOne({ where: { id: accId } });
-        const balance = account ? account.balance : 0;
+        
+        // Get balance
+        let balance = 0;
+        if (accountId) {
+            const account = await Account.findOne({ where: { id: accountId, user_id: userId } });
+            balance = account ? account.balance : 0;
+        } else {
+            // Sum all account balances for user
+            const accounts = await Account.findAll({ where: { user_id: userId } });
+            balance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+        }
+        
         res.json({ total_sales, total_expenses, balance });
     } catch (err) {
         next(err);

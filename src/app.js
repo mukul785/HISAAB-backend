@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 
 // Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static('uploads'));
 
 // Serve API docs as HTML at /docs with basic CSS for spacing
 app.get('/docs', (req, res) => {

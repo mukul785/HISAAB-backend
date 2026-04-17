@@ -2,20 +2,27 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { v2 as cloudinary } from 'cloudinary';
 
-// Ensure upload directories exist
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Ensure upload directories exist (for spreadsheets only now)
 const UPLOAD_DIR = 'uploads';
 const SPREADSHEET_DIR = path.join(UPLOAD_DIR, 'temp');
-const IMAGE_DIR = path.join(UPLOAD_DIR, 'images', 'inventory');
 
-[UPLOAD_DIR, SPREADSHEET_DIR, IMAGE_DIR].forEach(dir => {
+[UPLOAD_DIR, SPREADSHEET_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 });
 
 /**
- * Multer storage configuration for spreadsheet uploads
+ * Multer storage configuration for spreadsheet uploads (still local)
  */
 const spreadsheetStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -28,17 +35,9 @@ const spreadsheetStorage = multer.diskStorage({
 });
 
 /**
- * Multer storage configuration for image uploads
+ * Multer memory storage for image uploads (to upload to Cloudinary)
  */
-const imageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, IMAGE_DIR);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${req.params.id || uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
-});
+const imageStorage = multer.memoryStorage();
 
 /**
  * File filter for spreadsheet uploads (Excel and CSV)
@@ -123,12 +122,73 @@ export const handleUploadError = (err, req, res, next) => {
 };
 
 /**
- * Deletes a file from the filesystem
+ * Deletes a file from the filesystem (for spreadsheets)
  * @param {string} filePath - Path to the file to delete
  */
 export const deleteFile = (filePath) => {
   if (filePath && fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
+  }
+};
+
+/**
+ * Uploads an image buffer to Cloudinary
+ * @param {Buffer} buffer - Image buffer from multer
+ * @param {string} folder - Cloudinary folder name
+ * @param {string} publicId - Optional public ID for the image
+ * @returns {Promise<object>} - Cloudinary upload result
+ */
+export const uploadToCloudinary = (buffer, folder = 'inventory', publicId = null) => {
+  return new Promise((resolve, reject) => {
+    const uploadOptions = {
+      folder: `hisaab/${folder}`,
+      resource_type: 'image',
+    };
+    
+    if (publicId) {
+      uploadOptions.public_id = publicId;
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      uploadOptions,
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+};
+
+/**
+ * Deletes an image from Cloudinary
+ * @param {string} imageUrl - Full Cloudinary URL or public_id
+ * @returns {Promise<object>} - Cloudinary deletion result
+ */
+export const deleteFromCloudinary = async (imageUrl) => {
+  try {
+    // Extract public_id from Cloudinary URL
+    // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{folder}/{public_id}.{format}
+    const urlParts = imageUrl.split('/');
+    const uploadIndex = urlParts.indexOf('upload');
+    if (uploadIndex === -1) {
+      console.log('Not a Cloudinary URL, skipping:', imageUrl);
+      return null;
+    }
+    
+    // Get everything after 'upload/v{version}/' and remove extension
+    const pathAfterUpload = urlParts.slice(uploadIndex + 2).join('/');
+    const publicId = pathAfterUpload.replace(/\.[^/.]+$/, ''); // Remove file extension
+    
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result;
+  } catch (error) {
+    console.error('Error deleting from Cloudinary:', error);
+    return null;
   }
 };
 
