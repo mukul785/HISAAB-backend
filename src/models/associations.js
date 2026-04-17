@@ -8,6 +8,9 @@ import InventoryItem from './InventoryItem.js';
 import InventoryCategory from './InventoryCategory.js';
 import InventoryImage from './InventoryImage.js';
 import BulkUploadLog from './BulkUploadLog.js';
+import ABFeature from './ABFeature.js';
+import UserABConfig from './UserABConfig.js';
+import AppInitLog from './AppInitLog.js';
 
 // User - Account
 User.hasMany(Account, { foreignKey: 'user_id' });
@@ -53,4 +56,19 @@ BulkUploadLog.belongsTo(User, { foreignKey: 'user_id' });
 InventoryItem.hasMany(InventoryImage, { foreignKey: 'item_id', onDelete: 'CASCADE' });
 InventoryImage.belongsTo(InventoryItem, { foreignKey: 'item_id' });
 
-export { User, Account, Transaction, Invoice, InvoiceItem, Token, InventoryItem, InventoryCategory, InventoryImage, BulkUploadLog }; 
+// User - ABFeature (through UserABConfig)
+User.belongsToMany(ABFeature, { through: UserABConfig, foreignKey: 'user_id', otherKey: 'feature_id', as: 'abFeatures' });
+ABFeature.belongsToMany(User, { through: UserABConfig, foreignKey: 'feature_id', otherKey: 'user_id', as: 'users' });
+
+// UserABConfig associations for direct access
+User.hasMany(UserABConfig, { foreignKey: 'user_id', as: 'abConfigs' });
+UserABConfig.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+ABFeature.hasMany(UserABConfig, { foreignKey: 'feature_id', as: 'userConfigs' });
+UserABConfig.belongsTo(ABFeature, { foreignKey: 'feature_id', as: 'feature' });
+
+// User - AppInitLog
+User.hasMany(AppInitLog, { foreignKey: 'user_id', as: 'appInitLogs' });
+AppInitLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+export { User, Account, Transaction, Invoice, InvoiceItem, Token, InventoryItem, InventoryCategory, InventoryImage, BulkUploadLog, ABFeature, UserABConfig, AppInitLog }; 
