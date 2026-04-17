@@ -1427,6 +1427,32 @@
                 "description": "Toggle/switch a specific A/B feature for the authenticated user. Value can be 0, 1, true, or false."
               },
               "response": []
+            },
+            {
+              "name": "Lookup AB by Endpoint/Screen",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/app/lookup?endpoint=/api/transactions&screen=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "lookup"],
+                  "query": [
+                    {
+                      "key": "endpoint",
+                      "value": "/api/transactions",
+                      "description": "Find ABs affecting this endpoint"
+                    },
+                    {
+                      "key": "screen",
+                      "value": "",
+                      "description": "Find ABs affecting this screen/component"
+                    }
+                  ]
+                },
+                "description": "Find which A/B features affect a specific endpoint or screen. Helps developers discover which AB controls a feature."
+              },
+              "response": []
             }
           ]
         },
@@ -1440,11 +1466,43 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/app/admin/features",
+                  "raw": "{{baseUrl}}/app/admin/features?status=&owner=&tag=&endpoint=&screen=&search=",
                   "host": ["{{baseUrl}}"],
-                  "path": ["app", "admin", "features"]
+                  "path": ["app", "admin", "features"],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "Filter by status: draft, running, paused, completed, archived"
+                    },
+                    {
+                      "key": "owner",
+                      "value": "",
+                      "description": "Filter by owner/team"
+                    },
+                    {
+                      "key": "tag",
+                      "value": "",
+                      "description": "Filter by tag"
+                    },
+                    {
+                      "key": "endpoint",
+                      "value": "",
+                      "description": "Filter by affected endpoint"
+                    },
+                    {
+                      "key": "screen",
+                      "value": "",
+                      "description": "Filter by affected screen"
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search in feature_key, name, description"
+                    }
+                  ]
                 },
-                "description": "Get all A/B features with usage statistics"
+                "description": "Get all A/B features with usage statistics and optional filtering"
               },
               "response": []
             },
@@ -1460,14 +1518,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"feature_key\": \"csra\",\n  \"name\": \"CSRA Feature\",\n  \"description\": \"Customer Service Response Automation\",\n  \"default_value\": false,\n  \"is_active\": true,\n  \"rollout_percentage\": 50,\n  \"metadata\": {\n    \"experiment_id\": \"exp-001\"\n  }\n}"
+                  "raw": "{\n  \"feature_key\": \"new_checkout\",\n  \"name\": \"New Checkout Flow\",\n  \"description\": \"A/B test for the redesigned checkout experience\",\n  \"default_value\": false,\n  \"is_active\": true,\n  \"rollout_percentage\": 50,\n  \"affected_endpoints\": [\"/api/invoices\", \"/api/transactions\"],\n  \"affected_screens\": [\"CheckoutScreen\", \"PaymentFlow\", \"InvoiceDetail\"],\n  \"affected_platforms\": [\"Android App\", \"iOS App\", \"Web\"],\n  \"control_behavior\": \"Shows old checkout with 3-step process\",\n  \"experiment_behavior\": \"Shows new single-page checkout with inline validation\",\n  \"owner\": \"checkout-team\",\n  \"status\": \"running\",\n  \"tags\": [\"checkout\", \"ui\", \"conversion\"],\n  \"metadata\": {\n    \"jira_ticket\": \"HISAAB-123\",\n    \"analytics_event\": \"checkout_ab_test\"\n  }\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/app/admin/features",
                   "host": ["{{baseUrl}}"],
                   "path": ["app", "admin", "features"]
                 },
-                "description": "Create a new A/B feature. rollout_percentage determines what % of new users get value=1"
+                "description": "Create a new A/B feature with full mapping of affected endpoints, screens, and behavior descriptions."
               },
               "response": []
             },

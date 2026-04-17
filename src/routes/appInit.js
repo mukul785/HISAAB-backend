@@ -4,6 +4,7 @@ import {
   appInit,
   getUserABValues,
   switchUserAB,
+  lookupABByFeature,
   getAllFeatures,
   createFeature,
   updateFeature,
@@ -40,12 +41,21 @@ router.get('/ab', authenticateJWT, getUserABValues);
  */
 router.patch('/ab/:feature_key', authenticateJWT, switchUserAB);
 
+/**
+ * GET /api/app/lookup
+ * Find which AB features affect a specific endpoint or screen
+ * Query: ?endpoint=/api/transactions or ?screen=HomeScreen
+ * Response: { success, query, matching_features[], count }
+ */
+router.get('/lookup', authenticateJWT, lookupABByFeature);
+
 // ============ ADMIN ENDPOINTS ============
 // Note: In production, add admin role check middleware
 
 /**
  * GET /api/app/admin/features
- * Get all AB features with stats
+ * Get all AB features with stats and filtering
+ * Query: ?status=running&owner=team&tag=ui&endpoint=/api/x&screen=Home&search=keyword
  * Response: { success, features[], total }
  */
 router.get('/admin/features', authenticateJWT, getAllFeatures);

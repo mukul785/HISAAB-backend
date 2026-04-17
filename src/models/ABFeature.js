@@ -4,6 +4,7 @@ import sequelize from '../db.js';
 /**
  * ABFeature model - stores all available A/B test features
  * Each feature has a unique key and can be toggled globally
+ * Tracks which endpoints/screens/functionality each AB key controls
  */
 const ABFeature = sequelize.define('ABFeature', {
   id: {
@@ -27,6 +28,38 @@ const ABFeature = sequelize.define('ABFeature', {
     allowNull: true,
     comment: 'Description of what this A/B feature controls',
   },
+  
+  // ============ FEATURE MAPPING ============
+  affected_endpoints: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'List of API endpoints affected by this AB (e.g., ["/api/transactions", "/api/invoices/:id"])',
+  },
+  affected_screens: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'List of frontend screens/components affected (e.g., ["HomeScreen", "CheckoutFlow", "TransactionList"])',
+  },
+  affected_platforms: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: ['Android App', 'iOS App', 'Web'],
+    comment: 'Which platforms this AB applies to',
+  },
+  control_behavior: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Description of behavior when AB=0 (control group)',
+  },
+  experiment_behavior: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Description of behavior when AB=1 (experiment group)',
+  },
+  
+  // ============ EXPERIMENT DETAILS ============
   default_value: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
@@ -49,10 +82,41 @@ const ABFeature = sequelize.define('ABFeature', {
     },
     comment: 'Percentage of new users to automatically assign to experiment group (0-100)',
   },
+  
+  // ============ OWNERSHIP & TIMELINE ============
+  owner: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Team or person responsible for this AB test',
+  },
+  start_date: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'When this AB test started/should start',
+  },
+  end_date: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'When this AB test ended/should end',
+  },
+  status: {
+    type: DataTypes.ENUM('draft', 'running', 'paused', 'completed', 'archived'),
+    allowNull: false,
+    defaultValue: 'draft',
+    comment: 'Current status of the AB test',
+  },
+  
+  // ============ ADDITIONAL METADATA ============
   metadata: {
     type: DataTypes.JSON,
     allowNull: true,
-    comment: 'Additional metadata for the feature (e.g., experiment details, variants info)',
+    comment: 'Additional metadata (experiment_id, jira_ticket, analytics_event, etc.)',
+  },
+  tags: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'Tags for categorization (e.g., ["ui", "checkout", "performance"])',
   },
 }, {
   tableName: 'ab_features',
@@ -64,6 +128,12 @@ const ABFeature = sequelize.define('ABFeature', {
     },
     {
       fields: ['is_active'],
+    },
+    {
+      fields: ['status'],
+    },
+    {
+      fields: ['owner'],
     },
   ],
 });
