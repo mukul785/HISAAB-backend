@@ -297,12 +297,124 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
 
 ### Get Total Balance
 - **Endpoint:** `GET /accounts/balance/`
-- **Description:** Get the aggregated balance for all accounts
+- **Description:** Get the aggregated balance for all accounts. When the `mtur` A/B flag is enabled, also returns monthly breakdown data.
 - **Auth Required:** Yes
 - **Headers:** `Authorization: Bearer <access_token>`
-- **Sample Response:**
+- **A/B Feature:** `mtur` (Monthly Track User Balance)
+- **Sample Response (AB=0 - Control):**
   ```json
   { "total_balance": 1000.0 }
+  ```
+- **Sample Response (AB=1 - Experiment):**
+  ```json
+  {
+    "total_balance": 1000.0,
+    "monthly_data": [
+      {
+        "year": 2026,
+        "month": 4,
+        "total_opening_balance": 800.0,
+        "total_closing_balance": 1000.0,
+        "total_sales": 500.0,
+        "total_expenses": 300.0,
+        "net_change": 200.0,
+        "transaction_count": 15,
+        "account_count": 2
+      }
+    ]
+  }
+  ```
+
+---
+
+### Get Monthly Balance (AB: mtur)
+- **Endpoint:** `GET /accounts/monthly-balance`
+- **Description:** Get monthly balance breakdown by account. Only available when `mtur` A/B flag is enabled.
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **A/B Feature:** `mtur` (required - returns 403 if not enabled)
+- **Query Params (optional):**
+  - `account_id` - Filter by specific account UUID
+  - `year` - Filter by specific year (e.g., 2026)
+  - `limit` - Number of months to return (default: 12)
+- **Sample Request:** `GET /accounts/monthly-balance?year=2026&limit=6`
+- **Sample Response:**
+  ```json
+  {
+    "monthly_balances": [
+      {
+        "id": "uuid",
+        "account_id": "account-uuid",
+        "account_name": "Cash",
+        "year": 2026,
+        "month": 4,
+        "opening_balance": 800.0,
+        "closing_balance": 1000.0,
+        "total_sales": 500.0,
+        "total_expenses": 300.0,
+        "net_change": 200.0,
+        "transaction_count": 10
+      }
+    ],
+    "count": 1
+  }
+  ```
+- **Error Response (403 - Feature not enabled):**
+  ```json
+  {
+    "message": "Feature \"mtur\" is not enabled for your account",
+    "feature_key": "mtur"
+  }
+  ```
+
+---
+
+### Get Monthly Balance Summary (AB: mtur)
+- **Endpoint:** `GET /accounts/monthly-balance/summary`
+- **Description:** Get aggregated monthly summary across all accounts. Only available when `mtur` A/B flag is enabled.
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **A/B Feature:** `mtur` (required - returns 403 if not enabled)
+- **Query Params (optional):**
+  - `year` - Filter by specific year
+  - `limit` - Number of months to return (default: 12)
+- **Sample Response:**
+  ```json
+  {
+    "summary": [
+      {
+        "year": 2026,
+        "month": 4,
+        "total_opening_balance": 1500.0,
+        "total_closing_balance": 2000.0,
+        "total_sales": 800.0,
+        "total_expenses": 300.0,
+        "net_change": 500.0,
+        "transaction_count": 25,
+        "account_count": 3
+      }
+    ],
+    "count": 1
+  }
+  ```
+
+---
+
+### Backfill Monthly Balance (AB: mtur)
+- **Endpoint:** `POST /accounts/monthly-balance/backfill`
+- **Description:** Populate monthly balance data from existing transaction history. Useful when user first gets `mtur` enabled. Only available when `mtur` A/B flag is enabled.
+- **Auth Required:** Yes
+- **Headers:** `Authorization: Bearer <access_token>`
+- **A/B Feature:** `mtur` (required - returns 403 if not enabled)
+- **Query Params (optional):**
+  - `account_id` - Backfill only for specific account
+- **Sample Response:**
+  ```json
+  {
+    "message": "Monthly balance backfill completed",
+    "processed_months": 12,
+    "accounts_processed": 2
+  }
   ```
 
 ---
@@ -453,16 +565,49 @@ Base URL: `https://hisaab-backend-ib1n.onrender.com/api`
 
 ### Get Transaction Totals
 - **Endpoint:** `GET /transactions/totals`
-- **Description:** Get total sales, expenses, and balance for a specific account
+- **Description:** Get total sales, expenses, and balance for a specific account. When the `mtur` A/B flag is enabled, also returns monthly breakdown data.
 - **Auth Required:** Yes
 - **Headers:** `Authorization: Bearer <access_token>`
-- **Query Params:** `account_id` (required)
-- **Sample Response:**
+- **Query Params:** `account_id` (optional - if omitted, returns totals across all accounts)
+- **A/B Feature:** `mtur` (Monthly Track User Balance)
+- **Sample Response (AB=0 - Control):**
   ```json
   {
     "total_sales": 1000.0,
     "total_expenses": 500.0,
     "balance": 2000.0
+  }
+  ```
+- **Sample Response (AB=1 - Experiment):**
+  ```json
+  {
+    "total_sales": 1000.0,
+    "total_expenses": 500.0,
+    "balance": 2000.0,
+    "monthly_breakdown": [
+      {
+        "year": 2026,
+        "month": 4,
+        "total_opening_balance": 1500.0,
+        "total_closing_balance": 2000.0,
+        "total_sales": 400.0,
+        "total_expenses": 100.0,
+        "net_change": 300.0,
+        "transaction_count": 10,
+        "account_count": 2
+      },
+      {
+        "year": 2026,
+        "month": 3,
+        "total_opening_balance": 1200.0,
+        "total_closing_balance": 1500.0,
+        "total_sales": 600.0,
+        "total_expenses": 400.0,
+        "net_change": 200.0,
+        "transaction_count": 15,
+        "account_count": 2
+      }
+    ]
   }
   ```
 

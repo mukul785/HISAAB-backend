@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api",
+      "value": "https://hisaab-backend-ib1n.onrender.com/api",
       "type": "string"
     },
     {
@@ -201,7 +201,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["accounts", "balance"]
             },
-            "description": "Get aggregated balance for all accounts"
+            "description": "Get aggregated balance for all accounts. When mtur A/B flag is enabled (AB=1), also returns monthly_data array with monthly breakdown."
           },
           "response": []
         },
@@ -330,6 +330,84 @@
             "description": "Set the specified account as default"
           },
           "response": []
+        },
+        {
+          "name": "Get Monthly Balance (AB: mtur)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/monthly-balance?account_id=&year=&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "monthly-balance"],
+              "query": [
+                {
+                  "key": "account_id",
+                  "value": "",
+                  "description": "Filter by specific account UUID"
+                },
+                {
+                  "key": "year",
+                  "value": "",
+                  "description": "Filter by specific year (e.g., 2026)"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "Number of months to return (default: 12)"
+                }
+              ]
+            },
+            "description": "Get monthly balance breakdown by account. Requires mtur A/B flag to be enabled (AB=1). Returns 403 if not enabled."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Monthly Balance Summary (AB: mtur)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/monthly-balance/summary?year=&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "monthly-balance", "summary"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "",
+                  "description": "Filter by specific year"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "Number of months to return (default: 12)"
+                }
+              ]
+            },
+            "description": "Get aggregated monthly summary across all accounts. Requires mtur A/B flag to be enabled (AB=1). Returns 403 if not enabled."
+          },
+          "response": []
+        },
+        {
+          "name": "Backfill Monthly Balance (AB: mtur)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounts/monthly-balance/backfill?account_id=",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "monthly-balance", "backfill"],
+              "query": [
+                {
+                  "key": "account_id",
+                  "value": "",
+                  "description": "Optional: Backfill only for specific account"
+                }
+              ]
+            },
+            "description": "Populate monthly balance data from existing transaction history. Useful when user first gets mtur enabled. Requires mtur A/B flag (AB=1). Returns 403 if not enabled."
+          },
+          "response": []
         }
       ]
     },
@@ -418,7 +496,7 @@
                 }
               ]
             },
-            "description": "Get total sales, expenses, and balance"
+            "description": "Get total sales, expenses, and balance. When mtur A/B flag is enabled (AB=1), also returns monthly_breakdown array with monthly data for last 12 months."
           },
           "response": []
         },
