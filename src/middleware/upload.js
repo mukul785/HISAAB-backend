@@ -216,5 +216,4 @@ export default {
   deleteFile,
   cleanupTempFiles,
   SPREADSHEET_DIR,
-  IMAGE_DIR,
 };
