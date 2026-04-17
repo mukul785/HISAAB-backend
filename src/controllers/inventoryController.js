@@ -5,7 +5,7 @@ import InventoryImage from '../models/InventoryImage.js';
 import BulkUploadLog from '../models/BulkUploadLog.js';
 import { generateUniqueSKU, isValidSKU, skuExists } from '../utils/skuGenerator.js';
 import { parseSpreadsheet, transformRowToItem } from '../utils/spreadsheetParser.js';
-import { deleteFile } from '../middleware/upload.js';
+import { deleteFile, uploadToCloudinary, deleteFromCloudinary } from '../middleware/upload.js';
 import sequelize from '../db.js';
 import XLSX from 'xlsx';
 
@@ -190,7 +190,16 @@ export const createInventoryItem = async (req, res, next) => {
       updated_at: new Date(),
     });
 
-    res.status(201).json(item);
+    // Re-fetch with associations
+    const itemWithAssociations = await InventoryItem.findOne({
+      where: { id: item.id },
+      include: [
+        { model: InventoryCategory, attributes: ['id', 'name'] },
+        { model: InventoryImage, attributes: ['id', 'image_url', 'is_primary', 'sort_order'] },
+      ],
+    });
+
+    res.status(201).json(itemWithAssociations);
   } catch (err) {
     next(err);
   }
@@ -268,7 +277,16 @@ export const updateInventoryItem = async (req, res, next) => {
     item.updated_at = new Date();
     await item.save();
 
-    res.json(item);
+    // Re-fetch with associations
+    const itemWithAssociations = await InventoryItem.findOne({
+      where: { id: item.id },
+      include: [
+        { model: InventoryCategory, attributes: ['id', 'name'] },
+        { model: InventoryImage, attributes: ['id', 'image_url', 'is_primary', 'sort_order'] },
+      ],
+    });
+
+    res.json(itemWithAssociations);
   } catch (err) {
     next(err);
   }
@@ -288,16 +306,16 @@ export const deleteInventoryItem = async (req, res, next) => {
       return res.status(404).json({ message: 'Inventory item not found' });
     }
 
-    // Delete all associated images from filesystem
+    // Delete all associated images from Cloudinary
     if (item.InventoryImages && item.InventoryImages.length > 0) {
       for (const image of item.InventoryImages) {
-        deleteFile(image.image_url.replace(/^\//, ''));
+        await deleteFromCloudinary(image.image_url);
       }
     }
 
     // Also delete legacy single image if exists
     if (item.image_url) {
-      deleteFile(item.image_url.replace(/^\//, ''));
+      await deleteFromCloudinary(item.image_url);
     }
 
     await item.destroy();
@@ -362,7 +380,10 @@ export const getLowStockItems = async (req, res, next) => {
           [Op.lte]: sequelize.col('low_stock_threshold'),
         },
       },
-      include: [{ model: InventoryCategory, attributes: ['id', 'name'] }],
+      include: [
+        { model: InventoryCategory, attributes: ['id', 'name'] },
+        { model: InventoryImage, attributes: ['id', 'image_url', 'is_primary', 'sort_order'] },
+      ],
       order: [['stock_quantity', 'ASC']],
     });
 
@@ -415,7 +436,6 @@ export const addItemImage = async (req, res, next) => {
     });
 
     if (!item) {
-      if (req.file) deleteFile(req.file.path);
       return res.status(404).json({ message: 'Inventory item not found' });
     }
 
@@ -426,9 +446,17 @@ export const addItemImage = async (req, res, next) => {
     // Check existing image count (limit to 10 images per item)
     const existingCount = await InventoryImage.count({ where: { item_id: item.id } });
     if (existingCount >= 10) {
-      deleteFile(req.file.path);
       return res.status(400).json({ message: 'Maximum 10 images allowed per item' });
     }
+
+    // Upload to Cloudinary
+    const cloudinaryResult = await uploadToCloudinary(
+      req.file.buffer,
+      'inventory',
+      `${item.id}-${Date.now()}`
+    );
+
+    const imageUrl = cloudinaryResult.secure_url;
 
     // Get the next sort order
     const maxSortOrder = await InventoryImage.max('sort_order', { where: { item_id: item.id } });
@@ -436,8 +464,6 @@ export const addItemImage = async (req, res, next) => {
 
     // Determine if this should be primary (first image is automatically primary)
     const isPrimary = existingCount === 0;
-
-    const imageUrl = `/${req.file.path.replace(/\\/g, '/')}`;
 
     const image = await InventoryImage.create({
       item_id: item.id,
@@ -456,7 +482,6 @@ export const addItemImage = async (req, res, next) => {
 
     res.status(201).json(image);
   } catch (err) {
-    if (req.file) deleteFile(req.file.path);
     next(err);
   }
 };
@@ -484,8 +509,8 @@ export const deleteItemImage = async (req, res, next) => {
       return res.status(404).json({ message: 'Image not found' });
     }
 
-    // Delete file from filesystem
-    deleteFile(image.image_url.replace(/^\//, ''));
+    // Delete from Cloudinary
+    await deleteFromCloudinary(image.image_url);
 
     const wasPrimary = image.is_primary;
     await image.destroy();
