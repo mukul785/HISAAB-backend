@@ -1353,6 +1353,264 @@
           ]
         }
       ]
+    },
+    {
+      "name": "App Init & A/B Testing",
+      "description": "Application initialization and A/B feature flag management",
+      "item": [
+        {
+          "name": "User Endpoints",
+          "description": "Endpoints for regular authenticated users",
+          "item": [
+            {
+              "name": "App Init",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client\": \"Android App\",\n  \"version\": \"1.1\",\n  \"device_info\": {\n    \"os_version\": \"14\",\n    \"device_model\": \"Pixel 8\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/init",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "init"]
+                },
+                "description": "Initialize the app and get user's A/B feature flags. Returns ab_flags object with feature_key: 0 or 1 values."
+              },
+              "response": []
+            },
+            {
+              "name": "Get My AB Values",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/app/ab",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "ab"]
+                },
+                "description": "Get all A/B feature values for the authenticated user with detailed info"
+              },
+              "response": []
+            },
+            {
+              "name": "Switch My AB Value",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"value\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/ab/:feature_key",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "ab", ":feature_key"],
+                  "variable": [
+                    {
+                      "key": "feature_key",
+                      "value": "csra"
+                    }
+                  ]
+                },
+                "description": "Toggle/switch a specific A/B feature for the authenticated user. Value can be 0, 1, true, or false."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin - Features",
+          "description": "Admin endpoints to manage A/B features",
+          "item": [
+            {
+              "name": "List All Features",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/features",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "features"]
+                },
+                "description": "Get all A/B features with usage statistics"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Feature",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"feature_key\": \"csra\",\n  \"name\": \"CSRA Feature\",\n  \"description\": \"Customer Service Response Automation\",\n  \"default_value\": false,\n  \"is_active\": true,\n  \"rollout_percentage\": 50,\n  \"metadata\": {\n    \"experiment_id\": \"exp-001\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/features",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "features"]
+                },
+                "description": "Create a new A/B feature. rollout_percentage determines what % of new users get value=1"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Feature",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Feature Name\",\n  \"is_active\": true,\n  \"rollout_percentage\": 75\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/features/:feature_key",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "features", ":feature_key"],
+                  "variable": [
+                    {
+                      "key": "feature_key",
+                      "value": "csra"
+                    }
+                  ]
+                },
+                "description": "Update an existing A/B feature"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Feature",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/features/:feature_key",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "features", ":feature_key"],
+                  "variable": [
+                    {
+                      "key": "feature_key",
+                      "value": "csra"
+                    }
+                  ]
+                },
+                "description": "Delete an A/B feature and all associated user configurations"
+              },
+              "response": []
+            },
+            {
+              "name": "Bulk Assign AB Value",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [\"user-uuid-1\", \"user-uuid-2\", \"user-uuid-3\"],\n  \"value\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/features/:feature_key/bulk-assign",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "features", ":feature_key", "bulk-assign"],
+                  "variable": [
+                    {
+                      "key": "feature_key",
+                      "value": "csra"
+                    }
+                  ]
+                },
+                "description": "Assign A/B value to multiple users at once"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin - User AB Management",
+          "description": "Admin endpoints to manage A/B values for specific users",
+          "item": [
+            {
+              "name": "Get User's AB Values",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/users/:user_id/ab",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "users", ":user_id", "ab"],
+                  "variable": [
+                    {
+                      "key": "user_id",
+                      "value": "user-uuid-here"
+                    }
+                  ]
+                },
+                "description": "Get all A/B feature values for a specific user"
+              },
+              "response": []
+            },
+            {
+              "name": "Set User's AB Value",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"value\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/app/admin/users/:user_id/ab/:feature_key",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["app", "admin", "users", ":user_id", "ab", ":feature_key"],
+                  "variable": [
+                    {
+                      "key": "user_id",
+                      "value": "user-uuid-here"
+                    },
+                    {
+                      "key": "feature_key",
+                      "value": "csra"
+                    }
+                  ]
+                },
+                "description": "Set A/B value for a specific user"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
     }
   ]
 }

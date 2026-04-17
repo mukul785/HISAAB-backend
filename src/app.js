@@ -11,6 +11,7 @@ import transactionsRoutes from './routes/transactions.js';
 import invoicesRoutes from './routes/invoices.js';
 import taxRoutes from './routes/tax.js';
 import inventoryRoutes from './routes/inventory.js';
+import appInitRoutes from './routes/appInit.js';
 import './models/associations.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/transactions', transactionsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/tax', taxRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/app', appInitRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
